@@ -1,0 +1,33 @@
+# Chipbase Warmup - pinned inputs and tools. Do not change these; the evaluator uses them.
+# Run inside the pinned container image: it carries ORFS built at orfs_commit with the tools below.
+# The flow, the process, the tools and the container are the same as Chipbase Competition 01's.
+
+# --- the flow and the process ---
+orfs_repo     = https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts
+orfs_commit   = bde10c79a2389ffe9c5d73445f177f81262059f9
+container     = openroad/orfs@sha256:6bc088ee563c76374f7ef5d0a3244d607a6162c8979f1815f92eef683c1169a4
+pdk           = asap7                      # vendored in ORFS at that commit (flow/platforms/asap7)
+openroad      = 26Q3-173-gf5df0085c2
+yosys         = 0.64 (the-openroad-project/yosys, git 8449dd470)
+eqy           = https://github.com/YosysHQ/eqy @ 7a92d8441aa442dd1b5543458d6f1060a8f85dd1 (built by setup.sh into tools/eqy)
+equivalence   = the netlist against the evaluator's own pinned synthesis (flow/eval/eval_synth.mk), proven whole by ABC; the RTL-side check is informational
+sby           = https://github.com/YosysHQ/sby @ b1a1e98cba941ec8433f8dc27f416cd7bb7f14be (eqy's dependency)
+klayout       = 0.30.7
+
+# --- the design (fixed SystemVerilog in design/rtl, copied unchanged from ORFS at orfs_commit) ---
+design        = Ibex (ibex_core), RV32IMC, two-stage pipeline, flip-flop register file, fast multiplier, no PMP, no instruction cache
+ibex          = https://github.com/lowRISC/ibex @ 77d801001554cce8fe69e742e96539eecbe74425 (as vendored in ORFS: flow/designs/src/ibex_sv)
+rtl_files     = design/rtl/*.sv, design/rtl/syn/prim_clock_gating.v; include directory design/rtl/prim
+top           = ibex_core
+constraint_ps = 1000                        # the constraint file's clock (flow/ibex/constraint.sdc)
+
+# --- power workload ---
+activity      = design/activity/ibex_activity.tsv.gz (not made yet: published with the reference run)
+
+# --- reference ---
+reference     = flow/ibex/config.mk: flat, OpenROAD-flow-scripts' Ibex settings
+
+# --- compute budget (a gate, enforced by the judge's container run) ---
+budget_hours  = 1
+threads       = 8
+memory_gb     = 16

@@ -1,0 +1,47 @@
+# The judge. Gates are pass/fail. The cost weights and the reference values are fixed before the
+# warmup opens and do not change once entries arrive; the evaluator refuses to score if any of them
+# is missing.
+
+gates:
+  flat:               required   # one layout of standard cells: no hardened blocks (no result/blocks/)
+  equivalence:        required   # the netlist against the evaluator's own pinned synthesis of the golden
+                                 # RTL (Register Transfer Level): registers cut and paired, whole module
+                                 # proven by ABC; flow/eval/equiv.py
+  layout_vs_netlist:  required   # connectivity of the layout against the netlist
+  drc_violations:     0          # shorts and via violations from the detailed router's rule check; other
+                                 # rule classes are reported, not gated (flow/eval/drc.py)
+  route_overflow:     0
+  placement_legal:    true
+  setup_wns_ps:       ">= 0"     # slow corner, at the declared clock, propagated clocks
+  hold_wns_ps:        ">= 0"     # fast corner
+  ir_drop_limit_mv:   110        # worst static IR drop on VDD or VSS, the same limit as Competition 01
+  compute_budget:                # the official runner times the whole build, from the start of
+    hours: 1                     # reproduce/run.sh to its end, on its own machine
+    threads: 8
+    memory_gb: 16
+    measure: wall_clock
+
+cost:
+  form: "FOM = (T_base/T_you)^a * (A_base/A_you)^b * (P_base/P_you)^g"
+  # T = declared clock period (must pass timing), A = die area, P = total power
+  power_basis: fixed_reference_clock   # P is measured at a fixed 1,000 ps clock, so a slower clock does not
+                                       # lower it: typical corner (TC), the pinned switching activity
+                                       # (design/activity/, the fixed workload on the golden RTL, matched
+                                       # to flip-flops by register name)
+  # T is the declared period: the smallest period at which the finished layout passes setup at the
+  # slow corner (ASAP7 WC: SS libraries, 0.63 V, 100 C), in 5 ps steps (flow/time_at_period.tcl SEARCH=1
+  # SETUP_ONLY=1 CORNER=WC); hold is checked at the fast corner (BC: FF, 0.77 V) at that period.
+  weights:                             # set up front (2026-10-25), no calibration; they sum to 1
+    a: 0.50                            # speed: leads; on a processor core the clock period is where
+                                       # placement, sizing, buffering and the clock tree show
+    b: 0.30                            # area: synthesis fixes the cells, so the die comes down mostly
+                                       # to how densely they are placed
+    g: 0.20                            # power: drawn mostly by logic the pinned synthesis fixes
+
+baseline:                              # the reference (flow/ibex/config.mk), measured by the evaluator;
+                                       # not set until the reference run is finished
+  T_base_ps:
+  A_base_um2:
+  P_base_w:
+  runtime_s:
+  peak_mem_gb:
