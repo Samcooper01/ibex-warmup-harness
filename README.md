@@ -6,26 +6,33 @@
   <a href="https://www.klayout.de"><img src="docs/img/logo_klayout.png" height="72" alt="KLayout"></a>
 </p>
 
-<p align="center">
-  <sub><b><a href="https://samcooper01.github.io/chipbase/challenges/ibex/">The warmup page</a></b>: the design, the rules, the scoring, and how to begin.</sub>
-</p>
-
-> **Status: under construction.** The harness, the reference flow, and the evaluator are here; the
-> reference run, the power workload (`design/activity/`), and the reference values in `scoring.yaml`
-> are not done yet. Until they are, the evaluator stops at the power step and does not score.
-
 This repository is the evaluation harness for the warmup challenge on Chipbase, a free site for
-learning physical design. It is a smaller companion to
-[Chipbase Competition 01](https://github.com/Samcooper01/systolic-array-ai-accelerator-harness): the
-same kind of harness, evaluator, and score, on a design that runs through the flow in under an hour.
-Entrants implement Ibex [1], a 32-bit RISC-V [2] processor core, from RTL to a complete layout in the
-ASAP7 predictive process [3], using only open-source tools. Every entry that passes all gates is scored
-on clock period, area, and power relative to the reference flow included here.
+learning physical design. Entrants implement Ibex [1], a 32-bit RISC-V [2] processor core, from RTL to
+a complete layout in the ASAP7 predictive process [3], using only open-source tools, within a 1 hour
+compute budget. Every entry that passes all gates is scored on clock period, area, and power relative
+to the reference flow included here.
+
+The warmup is a smaller companion to
+[Chipbase Competition 01](https://github.com/Samcooper01/systolic-array-ai-accelerator-harness), with
+the same kind of harness, evaluator, and score. Its rules and scoring are also on the
+[warmup page](https://samcooper01.github.io/chipbase/challenges/ibex/).
+
+> **Status: under construction.** The harness, the reference flow, and the evaluator are in place.
+> The power workload (`design/activity/`), the reference run, and the reference values in
+> `scoring.yaml` are still to come; until then, the evaluator stops at the power step and does not
+> score. `HANDOFF.md` lists the open items.
+
+<p align="center">
+  <img src="docs/img/block_diagram.webp" width="720" alt="Ibex block diagram: a fetch stage (prefetch buffer, compressed decoder, pipeline register) and a decode and execute stage (decoder, controller, register file, control and status registers, arithmetic logic unit, multiplier and divider, load-store unit), between the instruction and data memory ports">
+  <br>
+  <sub><b>Figure 1.</b> Ibex's two pipeline stages. Every block is standard cells; the core has no memory macros.</sub>
+</p>
 
 ## Getting started
 
-Requirements: Docker, 8 or more hardware threads, and 16 GB of memory. Every tool comes from one pinned
-container image, the OpenROAD-flow-scripts project's own, the same image as Competition 01.
+Requirements: Docker, 8 or more hardware threads, 16 GB of memory, and about 7 GB of disk for the
+container image plus room for runs. Every tool comes from one pinned container image, the
+OpenROAD-flow-scripts project's own, the same image as Competition 01.
 
     git clone https://github.com/Samcooper01/ibex-warmup-harness
     cd ibex-warmup-harness
@@ -37,8 +44,8 @@ container image, the OpenROAD-flow-scripts project's own, the same image as Comp
     ./run_baseline.sh           # the reference flow, into baseline/
     ./evaluate.sh baseline/     # every gate and the score
 
-Once the reference values are set, the expected result is that every gate passes and the score is
-1.000. The full report is written to `eval_work/baseline/evaluation.json`.
+Expected result, once the reference values are set: every gate passes and the score is 1.000. The
+full report is written to `eval_work/baseline/evaluation.json`.
 
 ## Building an entry
 
@@ -69,8 +76,21 @@ The full specification is in `submission/README.md`.
 
 The reference flow runs on OpenROAD-flow-scripts: Yosys [4] for synthesis, then OpenROAD [5] for
 floorplanning, global placement [6], clock tree synthesis, and detailed routing [7]. Its configuration
-(`flow/ibex/config.mk`) is OpenROAD-flow-scripts' own for Ibex, built flat. Beyond the stock flow, it
-adds:
+(`flow/ibex/config.mk`) is OpenROAD-flow-scripts' own for Ibex, built flat. Table 1 lists the settings
+an entrant is most likely to change first.
+
+| Setting | Reference | Variable |
+|---|---|---|
+| Core utilization | 40 percent | `CORE_UTILIZATION` |
+| Core aspect ratio and margin | 1, with a 2 µm margin | `CORE_ASPECT_RATIO`, `CORE_MARGIN` |
+| Placement density | 0.20 above the minimum | `PLACE_DENSITY_LB_ADDON` |
+| Routing layers | M2 to M7 (platform default) | `MIN_ROUTING_LAYER`, `MAX_ROUTING_LAYER` |
+| Power grid | M1 and M2 rails, M5 and M6 straps (platform default) | `PDN_TCL` |
+| Corner the flow optimizes at | fast (platform default) | `CORNER` |
+
+<p align="center"><sub><b>Table 1.</b> Reference settings that set the die size, the wiring, and the timing target.</sub></p>
+
+Beyond the stock flow, the reference adds:
 
 - **Hold closure loop** (`flow/eco_hold.tcl`): repairs hold on extracted parasitics and reroutes until
   the routed layout meets hold.
@@ -146,7 +166,8 @@ layout alone, with the pinned tools; the official runner checks gate 8.
 3. **Legality and routing.** No overlaps, every cell on the placement grid, no unrouted nets.
 4. **Power integrity.** Worst static IR drop at most 110 mV.
 5. **Design rules.** No shorts or via violations, per the detailed router's rule checker. Its other
-   findings and the ASAP7 KLayout deck are informational, as in Competition 01.
+   findings and the ASAP7 KLayout deck are informational, since in Competition 01 both flagged the
+   reference layout throughout.
 6. **Logical equivalence.** The netlist is proven equivalent by ABC [8] to the evaluator's own
    synthesis of the golden RTL, so synthesis is fixed and everything after it is verified. If ABC
    cannot finish, the netlist is checked with 2,000,000 random vectors instead.
@@ -157,9 +178,9 @@ layout alone, with the pinned tools; the official runner checks gate 8.
 ### Reference results
 
 <!-- REF_RESULTS -->
-Not measured yet: the reference run is pending. This table will hold the declared clock period, die
-area, total power, worst IR drop, hold, design-rule count, equivalence, the build's wall-clock time,
-and the evaluator's runtime.
+Not measured yet: the reference run is pending. This section will list the declared clock period,
+die area, total power, worst IR drop, hold, design-rule count, equivalence, the build's wall-clock
+time, and the evaluator's runtime.
 <!-- /REF_RESULTS -->
 
 ### Repository layout
@@ -176,13 +197,14 @@ and the evaluator's runtime.
     versions.lock         every pinned version
     submission/           the submission specification
     docs/                 README images
+    HANDOFF.md            development record and open items
 
     generated, not tracked: work/, baseline/, judge_work/, eval_work/
 
 ### References
 
-1. lowRISC, "[Ibex Documentation](https://ibex-core.readthedocs.io/en/latest/)," and the
-   [Ibex source](https://github.com/lowRISC/ibex).
+1. lowRISC, "[Ibex RISC-V Core](https://github.com/lowRISC/ibex)," source code and
+   [documentation](https://ibex-core.readthedocs.io/en/latest/).
 2. A. Waterman and K. Asanović, Eds., "[The RISC-V Instruction Set
    Manual](https://github.com/riscv/riscv-isa-manual)," RISC-V International.
 3. L. T. Clark et al., "[ASAP7: A 7-nm FinFET Predictive Process Design
