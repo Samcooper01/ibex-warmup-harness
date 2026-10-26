@@ -36,6 +36,7 @@ and validated the same day in the pinned container.
 | `./run_baseline.sh` | 15.1 min, peak 4.5 GB; hold met without a repair round; declared 2,126 ps |
 | `./evaluate.sh baseline/` | all gates pass, score 1.000; 1.6 min, peak 9.3 GB |
 | `judge/run_entry.sh` | budget gate pass (903 s of 3,600); identical numbers, score 1.000; 16.6 min in all |
+| `judge/validate_reference.sh` (fresh clone, the README's commands) | all gates pass, score 1.000, identical numbers; flow 14.7 min, peak 4.7 GB; 18 min in all, setup included |
 
 The evaluator's peak is the design-rule check (`drt::check_drc`): 9.3 GB at 1 thread or 8, so it does
 not depend on the thread count. It is within the 16 GB limit, but it is the largest step, larger than
@@ -43,6 +44,5 @@ the flow itself.
 
 ## Open items
 
-1. **Clean-machine test.** `judge/validate_reference.sh`: a fresh clone, exactly the README's commands.
-2. **Site.** The warmup page (`app/challenge_content.py` and `app/templates/challenge_ibex.html` in the
+1. **Site.** The warmup page (`app/challenge_content.py` and `app/templates/challenge_ibex.html` in the
    chipbase repository) carries these numbers; keep it in step with `README.md` and `scoring.yaml`.

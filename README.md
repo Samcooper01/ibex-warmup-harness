@@ -190,13 +190,13 @@ layout alone, with the pinned tools; the official runner checks gate 8.
 | Hold (fast corner) | Met, worst slack 34.6 ps |
 | Design-rule violations (shorts and vias) | 0 |
 | Equivalence | Proven, 1,938 of 1,938 flip-flops and latches paired |
-| Build time | 15.1 min of 60 at 8 threads (15.05 min through the official runner); peak 4.5 GB |
+| Build time | 14.7 to 15.1 min of 60 at 8 threads; peak 4.7 GB |
 | Evaluator runtime | 1.6 min; peak 9.3 GB (the design-rule check) |
 
 <p align="center"><sub><b>Table 2.</b> Reference results, measured by the evaluator in the pinned container.</sub></p>
 
-A run in the pinned container and a run through the official runner gave identical period, area, and
-power. Multithreaded routing may still differ slightly on other machines.
+Every run (in the pinned container, through the official runner, and from a fresh clone; see
+`HANDOFF.md`) gave identical period, area, and power. Multithreaded routing may still differ slightly on other machines.
 <!-- /REF_RESULTS -->
 
 ### Repository layout
