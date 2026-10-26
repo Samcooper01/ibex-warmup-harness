@@ -10,4 +10,7 @@ ORFS=${ORFS_HOME:-$HERE/orfs}
 # shellcheck disable=SC1091
 source "$ORFS/env.sh" > /dev/null
 export ORFS_HOME=$ORFS
+# every step uses the official run's 8 threads: inside a container the flow still sees every host core.
+# (The design-rule check is the evaluator's largest step, 9.3 GB on the reference at 1 thread or 8.)
+export NUM_CORES=${NUM_CORES:-8}
 exec python3 "$HERE/flow/eval/evaluate.py" "$RESULT" --work "$HERE/eval_work/$(basename "$(cd "$RESULT" && pwd)")" "$@"

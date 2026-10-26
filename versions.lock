@@ -21,8 +21,10 @@ rtl_files     = design/rtl/*.sv, design/rtl/syn/prim_clock_gating.v; include dir
 top           = ibex_core
 constraint_ps = 1000                        # the constraint file's clock (flow/ibex/constraint.sdc)
 
-# --- power workload ---
-activity      = design/activity/ibex_activity.tsv.gz (not made yet: published with the reference run)
+# --- power workload (made by design/activity/make_activity.sh; entrants only use the file) ---
+activity      = design/activity/ibex_activity.tsv.gz (design/activity/workload.c: CRC-32, a 12 by 12 matrix multiply, an insertion sort, divides)
+activity_sim  = the pinned synthesis of the golden RTL, flattened with design/activity/sim_models.v, simulated by Icarus Verilog 11.0 (design/activity/tb.v)
+workload_cc   = Zig 0.13.0 (pip ziglang==0.13.0): clang and lld for riscv32, -mcpu=generic_rv32+m+c -O2
 
 # --- reference ---
 reference     = flow/ibex/config.mk: flat, OpenROAD-flow-scripts' Ibex settings

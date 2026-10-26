@@ -14,7 +14,8 @@ gates:
   placement_legal:    true
   setup_wns_ps:       ">= 0"     # slow corner, at the declared clock, propagated clocks
   hold_wns_ps:        ">= 0"     # fast corner
-  ir_drop_limit_mv:   110        # worst static IR drop on VDD or VSS, the same limit as Competition 01
+  ir_drop_limit_mv:   110        # worst static IR drop on VDD or VSS, the same limit as Competition 01;
+                                 # the reference's is 30.4 mV
   compute_budget:                # the official runner times the whole build, from the start of
     hours: 1                     # reproduce/run.sh to its end, on its own machine
     threads: 8
@@ -38,10 +39,9 @@ cost:
                                        # to how densely they are placed
     g: 0.20                            # power: drawn mostly by logic the pinned synthesis fixes
 
-baseline:                              # the reference (flow/ibex/config.mk), measured by the evaluator;
-                                       # not set until the reference run is finished
-  T_base_ps:
-  A_base_um2:
-  P_base_w:
-  runtime_s:
-  peak_mem_gb:
+baseline:                              # the reference (flow/ibex/config.mk), measured by the evaluator
+  T_base_ps:  2126                     # slow-corner setup, declared period
+  A_base_um2: 6501.4                   # die 80.631 x 80.631 um
+  P_base_w:   0.0187031                # typical corner, 1,000 ps clock, pinned activity
+  runtime_s:  904                      # the whole build, 8 threads, measured in the pinned container
+  peak_mem_gb: 4.5                     # detailed routing

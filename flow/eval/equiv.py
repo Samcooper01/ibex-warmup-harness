@@ -62,10 +62,21 @@ with open(seq_file, "w") as f:
         f.write(f"module DFFHQN{size}_ASAP7_75t_R (input CLK, input D, output QN);\n  reg Q;\n"
                 f"  always @(posedge CLK) Q <= D;\n  assign QN = ~Q;\nendmodule\n")
     # The asynchronous-set/reset flip-flop Ibex's resets map to. Library: ff(IQN), clear "!SETN" (IQN = 0, so
-    # Q = 1), preset "!RESETN" (IQN = 1, so Q = 0), clear_preset_var1 L (both low: IQN = 0, so Q = 1).
+    # Q = 1), preset "!RESETN" (IQN = 1, so Q = 0), clear_preset_var1 L (both low: IQN = 0, so Q = 1). Set and
+    # reset are modelled as inputs to the next value, taken at the clock: the same simplification async2sync
+    # makes, but it keeps the stored value on "<instance>.Q", which regcut.py pairs by name (async2sync moves it
+    # to an unnamed register). The nets driving SETN and RESETN are still compared, as part of the next value.
     f.write("module DFFASRHQNx1_ASAP7_75t_R (input CLK, input D, input RESETN, input SETN, output QN);\n  reg Q;\n"
-            "  always @(posedge CLK or negedge RESETN or negedge SETN)\n"
+            "  always @(posedge CLK)\n"
             "    if (!SETN) Q <= 1'b1; else if (!RESETN) Q <= 1'b0; else Q <= D;\n  assign QN = ~Q;\nendmodule\n")
+    # Latches: Ibex's clock gate holds its enable in one (DLLx1, transparent while CLK is low). Modelled as a
+    # register that takes D at the clock, so the latch is paired by name like a flip-flop and the logic
+    # deciding when the core's clock runs (its D) is compared on both sides. The clock network itself is
+    # not part of the comparison, for latches as for flip-flops.
+    for kind in ("DLL", "DHL"):
+        for size in ("x1", "x2", "x3"):
+            f.write(f"module {kind}{size}_ASAP7_75t_R (input CLK, input D, output reg Q);\n"
+                    f"  always @(posedge CLK) Q <= D;\nendmodule\n")
 stub_file = os.path.join(EQ, "box_stubs.v")   # black-box modules: none in the warmup, so an empty file
 open(stub_file, "w").close()
 
