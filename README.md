@@ -23,9 +23,9 @@ the same kind of harness, evaluator, and score. Its rules and scoring are also o
 > score. `HANDOFF.md` lists the open items.
 
 <p align="center">
-  <img src="docs/img/block_diagram.webp" width="720" alt="Ibex block diagram: a fetch stage (prefetch buffer, compressed decoder, pipeline register) and a decode and execute stage (decoder, controller, register file, control and status registers, arithmetic logic unit, multiplier and divider, load-store unit), between the instruction and data memory ports">
+  <img src="docs/img/datapath.webp" width="760" alt="Ibex datapath. Fetch: a next-PC multiplexer (branch target, boot address, exception vector, return address) feeds the prefetch buffer, which reads instruction memory; the compressed decoder expands 16-bit instructions; a pipeline register passes the instruction and its address on. Decode and execute: the decoder reads registers rs1 and rs2 from the register file; operand multiplexers choose rs1 or the PC and rs2 or the immediate; the arithmetic logic unit computes the result, and its adder also gives the load-store address and the branch target sent back to fetch; the multiplier and divider work beside it. Write back: a multiplexer picks load data, the execute result, or a control and status register and writes it to register rd. A controller redirects fetch on a taken branch.">
   <br>
-  <sub><b>Figure 1.</b> Ibex's two pipeline stages. Every block is standard cells; the core has no memory macros.</sub>
+  <sub><b>Figure 1.</b> The Ibex datapath: an instruction is fetched in the first stage, then decoded, executed, and written back in the second. Every part is standard cells; the core has no memory macros.</sub>
 </p>
 
 ## Getting started
