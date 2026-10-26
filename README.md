@@ -17,11 +17,6 @@ The warmup is a smaller companion to
 the same kind of harness, evaluator, and score. Its rules and scoring are also on the
 [warmup page](https://samcooper01.github.io/chipbase/challenges/ibex/).
 
-> **Status: under construction.** The harness, the reference flow, and the evaluator are in place.
-> The power workload (`design/activity/`), the reference run, and the reference values in
-> `scoring.yaml` are still to come; until then, the evaluator stops at the power step and does not
-> score. `HANDOFF.md` lists the open items.
-
 <p align="center">
   <img src="docs/img/datapath.webp" width="760" alt="Ibex datapath. Fetch: a next-PC multiplexer (branch target, boot address, exception vector, return address) feeds the prefetch buffer, which reads instruction memory; the compressed decoder expands 16-bit instructions; a pipeline register passes the instruction and its address on. Decode and execute: the decoder reads registers rs1 and rs2 from the register file; operand multiplexers choose rs1 or the PC and rs2 or the immediate; the arithmetic logic unit computes the result, and its adder also gives the load-store address and the branch target sent back to fetch; the multiplier and divider work beside it. Write back: a multiplexer picks load data, the execute result, or a control and status register and writes it to register rd. A controller redirects fetch on a taken branch.">
   <br>
@@ -30,9 +25,9 @@ the same kind of harness, evaluator, and score. Its rules and scoring are also o
 
 ## Getting started
 
-Requirements: Docker, 8 or more hardware threads, 16 GB of memory, and about 7 GB of disk for the
-container image plus room for runs. Every tool comes from one pinned container image, the
-OpenROAD-flow-scripts project's own, the same image as Competition 01.
+Requirements: Docker, 8 or more hardware threads, 16 GB of memory, and about 10 GB of disk (the
+container image is 6.5 GB; a run and its evaluation take about 1.5 GB). Every tool comes from one
+pinned container image, the OpenROAD-flow-scripts project's own, the same image as Competition 01.
 
     git clone https://github.com/Samcooper01/ibex-warmup-harness
     cd ibex-warmup-harness
@@ -41,11 +36,11 @@ OpenROAD-flow-scripts project's own, the same image as Competition 01.
 
     # inside the container:
     ./setup.sh                  # links the container's tools and checks them
-    ./run_baseline.sh           # the reference flow, into baseline/
-    ./evaluate.sh baseline/     # every gate and the score
+    ./run_baseline.sh           # the reference flow, into baseline/ (about 15 minutes)
+    ./evaluate.sh baseline/     # every gate and the score (about 2 minutes)
 
-Expected result, once the reference values are set: every gate passes and the score is 1.000. The
-full report is written to `eval_work/baseline/evaluation.json`.
+Expected result: every gate passes and the score is 1.000. The full report is written to
+`eval_work/baseline/evaluation.json`.
 
 ## Building an entry
 
@@ -63,8 +58,8 @@ packages the reference this way, so the simplest start is to fork it and modify 
 
        judge/run_entry.sh
 
-   It builds and runs your latest commit exactly as the official run does and scores it. The score
-   lands in `eval_work/mine/evaluation.json`. It needs Git and Python 3; for an entry that is not a
+   It builds and runs your latest commit exactly as the official run does and scores it (about 17
+   minutes for the reference). The score lands in `eval_work/mine/evaluation.json`. It needs Git and Python 3; for an entry that is not a
    fork of this repository, give its location and commit: `judge/run_entry.sh <path or URL> <commit>`.
 
 3. **Submit** by opening an issue on this repository with the entry's repository, the commit, and
@@ -89,6 +84,13 @@ an entrant is most likely to change first.
 | Corner the flow optimizes at | fast (platform default) | `CORNER` |
 
 <p align="center"><sub><b>Table 1.</b> Reference settings that set the die size, the wiring, and the timing target.</sub></p>
+
+| Placement | Clock tree | Routing | Finish |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/img/ref_1_placement.webp" width="180" alt="Reference placement: about 20,700 standard cells on an 81 by 81 µm die"> | <img src="docs/img/ref_2_clock_tree.webp" width="180" alt="Reference clock tree reaching the core's 1,938 flip-flops and latch"> | <img src="docs/img/ref_3_routing.webp" width="180" alt="Reference routing on metal layers M2 to M7"> | <img src="docs/img/ref_4_finish.webp" width="180" alt="The finished reference die, with the power grid's straps across it"> |
+| about 20,700 cells | 1,938 flip-flops and one latch | M2 to M7, no shorts or via violations | 81 by 81 µm |
+
+<p align="center"><sub><b>Figure 2.</b> The reference implementation at four stages of the flow.</sub></p>
 
 Beyond the stock flow, the reference adds:
 
@@ -122,8 +124,9 @@ Fixed and identical for all entrants:
   clock, on `clk_i`; input-to-register and register-to-output paths within 80 percent of the period,
   input-to-output within 60 percent; no clock uncertainty, input drive, output load, or false paths.
   The evaluator times every entry against this file.
-- **Power workload.** `design/activity/`: the switching activity of a short program run on the golden
-  RTL (not made yet).
+- **Power workload.** `design/activity/`: the switching activity of a short program (CRC-32, a matrix
+  multiply, a sort, and divides; 42,302 cycles), simulated on the pinned synthesis of the golden RTL,
+  the gate netlist every entry is proven equivalent to. Every flip-flop has its own entry.
 
 `versions.lock` records every pinned version.
 
@@ -149,11 +152,11 @@ $$
 $$
 
 T is the declared clock period, at which the entry must pass setup; A is the die area; and P is the
-total power at a fixed 1,000 ps clock under the pinned activity, so a slower clock does not lower it.
-Higher is better; the reference scores 1.000. Speed weighs most because on a processor core the clock
-period is where placement, sizing, buffering, and the clock tree show; synthesis fixes the cells, so
-area comes down mostly to placement density. The weights are fixed and will not change once entries
-arrive.
+total power at a fixed 1,000 ps clock under the pinned activity, so a slower clock does not lower
+it. Reference values are in Table 2. Higher is better; the reference scores 1.000. Speed weighs most
+because on a processor core the clock period is where placement, sizing, buffering, and the clock
+tree show; synthesis fixes the cells, so area comes down mostly to placement density. The weights
+are fixed and will not change once entries arrive.
 
 ### Evaluation gates
 
@@ -178,9 +181,22 @@ layout alone, with the pinned tools; the official runner checks gate 8.
 ### Reference results
 
 <!-- REF_RESULTS -->
-Not measured yet: the reference run is pending. This section will list the declared clock period,
-die area, total power, worst IR drop, hold, design-rule count, equivalence, the build's wall-clock
-time, and the evaluator's runtime.
+| Metric | Reference |
+|---|---|
+| Declared clock period (slow-corner setup) | 2,126 ps (470 MHz) |
+| Die area | 6,501.4 µm² (80.631 by 80.631 µm) |
+| Total power (typical corner, 1,000 ps clock, pinned activity) | 18.70 mW |
+| Worst static IR drop | 30.4 mV (limit 110 mV) |
+| Hold (fast corner) | Met, worst slack 34.6 ps |
+| Design-rule violations (shorts and vias) | 0 |
+| Equivalence | Proven, 1,938 of 1,938 flip-flops and latches paired |
+| Build time | 15.1 min of 60 at 8 threads (15.05 min through the official runner); peak 4.5 GB |
+| Evaluator runtime | 1.6 min; peak 9.3 GB (the design-rule check) |
+
+<p align="center"><sub><b>Table 2.</b> Reference results, measured by the evaluator in the pinned container.</sub></p>
+
+A run in the pinned container and a run through the official runner gave identical period, area, and
+power. Multithreaded routing may still differ slightly on other machines.
 <!-- /REF_RESULTS -->
 
 ### Repository layout
